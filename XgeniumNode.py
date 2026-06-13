@@ -13,9 +13,8 @@ TELEGRAM_CHAT_ID = "YOUR_CHAT_ID_HERE"
 # Assets to monitor (BTC, Gold, S&P 500, Nvidia)
 # yfinance tickers: BTC-USD (Bitcoin), GC=F (Gold), ^GSPC (S&P 500), NVDA (Nvidia)
 TICKERS = ["BTC-USD", "GC=F", "^GSPC", "NVDA"]
-INTERVAL = "1d"  # Daily candles. You can change to '1h' for hourly.
-PERIOD = "max"  # Needed to calculate true All-Time Highs
-
+INTERVAL = "1h"    # Use 1-hour chunks so we can see the exact hours before the market opens
+PERIOD = "730d"    # yfinance allows a maximum of 730 days for hourly data 
 
 def send_telegram_message(message):
     """Sends a formatted text alert to your Telegram channel/chat."""
@@ -28,15 +27,15 @@ def send_telegram_message(message):
     except Exception as e:
         print(f"Failed to send telegram message: {e}")
 
-
 def analyze_asset(ticker_symbol):
-    """Fetches data and executes the 4 chart-reading techniques."""
-    # 1. Fetch Data
+    """Fetches data including pre/post market and executes chart-reading."""
     ticker = yf.Ticker(ticker_symbol)
-    df = ticker.history(period=PERIOD, interval=INTERVAL)
+    
+    # ADDING prepost=True HERE IS THE SECRET TO PRE-MARKET ALERTS
+    df = ticker.history(period=PERIOD, interval=INTERVAL, prepost=True)
 
     if df.empty or len(df) < 50:
-        return  # Not enough data to calculate moving averages
+        return
 
     # Get latest data points
     latest_bar = df.iloc[-1]
